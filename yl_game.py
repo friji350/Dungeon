@@ -12,6 +12,7 @@ screen_height = 1000
 
 #размер квадрата
 size_cell = 100
+dead = 0
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Platformer')
@@ -49,76 +50,86 @@ class Player():
 		self.jumped = False
 		self.direction = 0
 
-	def update(self):
+	def update(self, dead):
 		dx = 0
 		dy = 0
 		#обработка нажатия клавишь
-		key = pygame.key.get_pressed()
-		if key[pygame.K_SPACE] and self.jumped == False:
-			self.vel_y = -15
-			self.jumped = True
-		if key[pygame.K_SPACE] == False:
-			self.jumped = False
-		if key[pygame.K_LEFT]:
-			dx -= 5
-			self.coun += 1
-			self.direction = -1
-		if key[pygame.K_RIGHT]:
-			dx += 5
-			self.coun += 1
-			self.direction = 1
-		if key[pygame.K_LEFT] == False and key[pygame.K_RIGHT] == False:
-			self.coun = 0
-			self.index = 0
-			if self.direction == 1:
-				self.image = self.hero_r[self.index]
-			if self.direction == -1:
-				self.image = self.hero_l[self.index]
-
-
-		#обработка анимации
-		if self.coun > 5:
-			self.coun = 0	
-			self.index += 1
-			if self.index >= len(self.hero_r):
+		if dead != 1:
+			key = pygame.key.get_pressed()
+			if key[pygame.K_SPACE] and self.jumped == False:
+				self.vel_y = -15
+				self.jumped = True
+			if key[pygame.K_SPACE] == False:
+				self.jumped = False
+			if key[pygame.K_LEFT]:
+				dx -= 5
+				self.coun += 1
+				self.direction = -1
+			if key[pygame.K_RIGHT]:
+				dx += 5
+				self.coun += 1
+				self.direction = 1
+			if key[pygame.K_LEFT] == False and key[pygame.K_RIGHT] == False:
+				self.coun = 0
 				self.index = 0
-			if self.direction == 1:
-				self.image = self.hero_r[self.index]
-			if self.direction == -1:
-				self.image = self.hero_l[self.index]
+				if self.direction == 1:
+					self.image = self.hero_r[self.index]
+				if self.direction == -1:
+					self.image = self.hero_l[self.index]
 
 
-		#"гравтация"
-		#коэффициент высоты прыжка
-		coefficient_gravity = 1
-		#скорость падения
-		speed_fall = 10
-		self.vel_y += coefficient_gravity
-		if self.vel_y > speed_fall:
-			self.vel_y = speed_fall
-		dy += self.vel_y
+			#обработка анимации
+			if self.coun > 5:
+				self.coun = 0	
+				self.index += 1
+				if self.index >= len(self.hero_r):
+					self.index = 0
+				if self.direction == 1:
+					self.image = self.hero_r[self.index]
+				if self.direction == -1:
+					self.image = self.hero_l[self.index]
 
 
-		#столкновение с блоками
-		for tile in world.tile_list:
-			#столкновение по "х"
-			if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.wid, self.heig):
-				dx = 0
-			#столкновение по "у"
-			if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.wid, self.heig):
-				#в прижке
-				if self.vel_y < 0:
-					dy = tile[1].bottom - self.rect.top
-					self.vel_y = 0
-				#падает
-				elif self.vel_y >= 0:
-					dy = tile[1].top - self.rect.bottom
-					self.vel_y = 0
+			#"гравтация"
+			#коэффициент высоты прыжка
+			coefficient_gravity = 1
+			#скорость падения
+			speed_fall = 10
+			self.vel_y += coefficient_gravity
+			if self.vel_y > speed_fall:
+				self.vel_y = speed_fall
+			dy += self.vel_y
 
 
-		#изменение координат персонажа
-		self.rect.x += dx
-		self.rect.y += dy
+			#столкновение с блоками
+			for tile in world.tile_list:
+				#столкновение по "х"
+				if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.wid, self.heig):
+					dx = 0
+				#столкновение по "у"
+				if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.wid, self.heig):
+					#в прижке
+					if self.vel_y < 0:
+						dy = tile[1].bottom - self.rect.top
+						self.vel_y = 0
+					#падает
+					elif self.vel_y >= 0:
+						dy = tile[1].top - self.rect.bottom
+						self.vel_y = 0
+
+
+			#check for collision with lava
+			if pygame.sprite.spritecollide(self, lava_group, False):
+				dead = 1
+
+
+			#изменение координат персонажа
+			self.rect.x += dx
+			self.rect.y += dy
+		
+		else:
+			self.image = pygame.transform.scale(pygame.image.load('img/dead.png'), (100, 100))
+
 
 		#не дает персанажу выпасть за пределы мира
 		if self.rect.bottom > screen_height:
@@ -127,6 +138,8 @@ class Player():
 
 		
 		screen.blit(self.image, self.rect)
+
+		return dead
 
 
 
@@ -176,12 +189,8 @@ class World():
 					self.tile_list.append(j)
 				# 3 - лава	
 				if j == 4:
-					img = pygame.transform.scale(lava_img, (size_cell, size_cell))
-					img_rect = img.get_rect()
-					img_rect.x = col * size_cell
-					img_rect.y = row * size_cell
-					j = (img, img_rect)
-					self.tile_list.append(j)
+					lava = LavaBlock(col * size_cell, row * size_cell + (size_cell // 2))
+					lava_group.add(lava)
 				col += 1
 			row += 1
 
@@ -189,6 +198,14 @@ class World():
 		for tile in self.tile_list:
 			screen.blit(tile[0], tile[1])
 
+class LavaBlock(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		pygame.sprite.Sprite.__init__(self)
+		img = pygame.image.load('img/lava.png')
+		self.image = pygame.transform.scale(img, (size_cell, size_cell // 2))
+		self.rect = self.image.get_rect()
+		self.rect.x = x
+		self.rect.y = y
 
 
 world_data = [
@@ -207,7 +224,11 @@ world_data = [
 
 
 player = Player(100, screen_height - 130)
+
+lava_group = pygame.sprite.Group()
+
 world = World(world_data)
+
 
 run = True
 while run:
@@ -218,12 +239,13 @@ while run:
 
 	world.draw()
 
-	player.update()
+	dead = player.update(dead)
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			run = False
 
+	lava_group.draw(screen)
 	pygame.display.update()
 
 pygame.quit()
