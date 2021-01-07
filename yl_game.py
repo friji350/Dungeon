@@ -44,6 +44,8 @@ class Player():
 		self.rect.x = x
 		self.rect.y = y
 		self.vel_y = 0
+		self.wid = self.image.get_width()
+		self.heig = self.image.get_height()
 		self.jumped = False
 		self.direction = 0
 
@@ -97,6 +99,23 @@ class Player():
 		dy += self.vel_y
 
 
+		#столкновение с блоками
+		for tile in world.tile_list:
+			#столкновение по "х"
+			if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.wid, self.heig):
+				dx = 0
+			#столкновение по "у"
+			if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.wid, self.heig):
+				#в прижке
+				if self.vel_y < 0:
+					dy = tile[1].bottom - self.rect.top
+					self.vel_y = 0
+				#падает
+				elif self.vel_y >= 0:
+					dy = tile[1].top - self.rect.bottom
+					self.vel_y = 0
+
+
 		#изменение координат персонажа
 		self.rect.x += dx
 		self.rect.y += dy
@@ -119,7 +138,7 @@ class World():
 		#загрузка текстур
 		dirt_img = pygame.image.load('img/dirt.png')
 		dirt_fish_img = pygame.image.load('img/dirt_fish.png')
-		grass_img = pygame.image.load('img/grass.png')
+		grass_img = pygame.image.load('img/road.png')
 		lava_img = pygame.image.load('img/lava.png')
 
 		#чтобы не рисовать в ручную каждую "ячейку" использу матрицу с информацией о уровне
