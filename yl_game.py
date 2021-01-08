@@ -269,7 +269,9 @@ class Button():
 
 
 		#отрисовка кнопки
+		screen.blit(bg_img, (0, 0))
 		screen.blit(self.image, self.rect)
+		
 
 		return ret
 
@@ -315,8 +317,8 @@ while run:
 		if restart_button.draw():
 				player.reset(100, screen_height - 130)
 				dead = 0
-
-	lava_group.draw(screen)
+	else:
+		lava_group.draw(screen)
 	pygame.display.update()
 
 pygame.quit()
