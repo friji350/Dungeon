@@ -66,15 +66,16 @@ class Player():
 				self.jump_num += 1
 			if key[pygame.K_SPACE] == False:
 				self.jumped = False
-			if key[pygame.K_LEFT]:
+			if key[pygame.K_a]:
 				dx -= 5
 				self.coun += 1
 				self.direction = -1
-			if key[pygame.K_RIGHT]:
+			if key[pygame.K_d]:
 				dx += 5
 				self.coun += 1
 				self.direction = 1
-			if key[pygame.K_LEFT] == False and key[pygame.K_RIGHT] == False:
+			
+			if key[pygame.K_a] == False and key[pygame.K_d] == False:
 				self.coun = 0
 				self.index = 0
 				if self.direction == 1:
@@ -235,6 +236,15 @@ class World():
 			screen.blit(tile[0], tile[1])
 
 class LavaBlock(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		pygame.sprite.Sprite.__init__(self)
+		img = pygame.image.load('img/lava.png')
+		self.image = pygame.transform.scale(img, (size_cell, size_cell // 2))
+		self.rect = self.image.get_rect()
+		self.rect.x = x
+		self.rect.y = y
+
+class SpikeBlock(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
 		img = pygame.image.load('img/lava.png')
