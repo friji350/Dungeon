@@ -130,6 +130,8 @@ class Player():
 			#столкновение с лавой
 			if pygame.sprite.spritecollide(self, lava_group, False):
 				dead = 1
+			if pygame.sprite.spritecollide(self, spike_group, False):
+				dead = 1
 
 
 			#изменение координат персонажа
@@ -224,10 +226,14 @@ class World():
 					img_rect.y = row * size_cell
 					j = (img, img_rect)
 					self.tile_list.append(j)
-				# 3 - лава	
+				# 4 - лава	
 				if j == 4:
 					lava = LavaBlock(col * size_cell, row * size_cell + (size_cell // 2))
 					lava_group.add(lava)
+				#5 - шипы
+				if j == 5:
+					spike = SpikeBlock(col * size_cell, row * size_cell )
+					spike_group.add(spike)
 				col += 1
 			row += 1
 
@@ -239,7 +245,7 @@ class LavaBlock(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
 		img = pygame.image.load('img/lava.png')
-		self.image = pygame.transform.scale(img, (size_cell, size_cell // 2))
+		self.image = pygame.transform.scale(img, (size_cell, size_cell))
 		self.rect = self.image.get_rect()
 		self.rect.x = x
 		self.rect.y = y
@@ -247,11 +253,11 @@ class LavaBlock(pygame.sprite.Sprite):
 class SpikeBlock(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		pygame.sprite.Sprite.__init__(self)
-		img = pygame.image.load('img/lava.png')
-		self.image = pygame.transform.scale(img, (size_cell, size_cell // 2))
+		img = pygame.image.load('img/spike_active.png')
+		self.image = pygame.transform.scale(img, (size_cell, size_cell+40))
 		self.rect = self.image.get_rect()
 		self.rect.x = x
-		self.rect.y = y
+		self.rect.y = y-40
 
 
 class Button():
@@ -290,11 +296,11 @@ world_data = [
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],  
 [1, 0, 0, 0, 0, 2, 4, 4, 4, 1], 
-[1, 2, 2, 2, 2, 2, 1, 1, 1, 1], 
-[1, 2, 1, 1, 1, 1, 1, 1, 1, 1], 
+[1, 2, 2, 5, 5, 2, 1, 1, 1, 1], 
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
 [1, 1, 1, 1, 1, 1, 3, 1, 3, 1]
 ]
 
@@ -303,6 +309,8 @@ world_data = [
 player = Player(100, screen_height - 130)
 
 lava_group = pygame.sprite.Group()
+spike_group = pygame.sprite.Group()
+
 
 world = World(world_data)
 
@@ -328,6 +336,7 @@ while run:
 				player.reset(100, screen_height - 130)
 				dead = 0
 	else:
+		spike_group.draw(screen)
 		lava_group.draw(screen)
 	pygame.display.update()
 
