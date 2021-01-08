@@ -228,12 +228,16 @@ class World():
 					self.tile_list.append(j)
 				# 4 - лава	
 				if j == 4:
-					lava = LavaBlock(col * size_cell, row * size_cell + (size_cell // 2))
+					lava = LavaBlock(col * size_cell, row * size_cell + (size_cell // 4))
 					lava_group.add(lava)
 				#5 - шипы
 				if j == 5:
 					spike = SpikeBlock(col * size_cell, row * size_cell )
 					spike_group.add(spike)
+				#9 - портал
+				if j == 9:
+					portal = PortalBlock(col * size_cell, row * size_cell )
+					portal_group.add(portal)
 				col += 1
 			row += 1
 
@@ -259,6 +263,14 @@ class SpikeBlock(pygame.sprite.Sprite):
 		self.rect.x = x
 		self.rect.y = y-40
 
+class PortalBlock(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		pygame.sprite.Sprite.__init__(self)
+		img = pygame.image.load('img/portal_active.png')
+		self.image = pygame.transform.scale(img, (size_cell, size_cell+40))
+		self.rect = self.image.get_rect()
+		self.rect.x = x
+		self.rect.y = y-40
 
 class Button():
 	def __init__(self, x, y, image):
@@ -291,17 +303,17 @@ class Button():
 
 		return ret
 
-world_data = [
+world_data1 = [
 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 9, 1], 
+[1, 0, 0, 0, 2, 2, 2, 2, 2, 1], 
+[1, 0, 0, 2, 0, 0, 0, 0, 0, 1], 
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],  
-[1, 0, 0, 0, 0, 2, 4, 4, 4, 1], 
-[1, 2, 2, 5, 5, 2, 1, 1, 1, 1], 
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
-[1, 1, 1, 1, 1, 1, 3, 1, 3, 1]
+[1, 5, 2, 2, 2, 5, 2, 0, 0, 1],  
+[1, 0, 0, 0, 0, 0, 0, 0, 2, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 2, 2, 2, 4, 4, 4, 2, 4, 1], 
+[1, 3, 1, 1, 1, 3, 1, 1, 1, 1]
 ]
 
 
@@ -310,9 +322,9 @@ player = Player(100, screen_height - 130)
 
 lava_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
+portal_group = pygame.sprite.Group()
 
-
-world = World(world_data)
+world = World(world_data1)
 
 restart_button = Button(300, 300, restart_img)
 
@@ -338,6 +350,7 @@ while run:
 	else:
 		spike_group.draw(screen)
 		lava_group.draw(screen)
+		portal_group.draw(screen)
 	pygame.display.update()
 
 pygame.quit()
