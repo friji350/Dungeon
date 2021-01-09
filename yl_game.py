@@ -7,7 +7,7 @@ clock = pygame.time.Clock()
 fps = 60
 
 #размер окна
-screen_width = 1000
+screen_width = 1200
 screen_height = 1000
 
 #размер квадрата
@@ -22,6 +22,20 @@ bg_img = pygame.image.load('img/background.jpg')
 
 restart_img = pygame.image.load('img/start.png')
 
+level_group = []
+
+def levelLoad(maxLevel):
+	for i in range(1,maxLevel+1):
+		level_group.append(eval('lvl' + str(i)))
+
+def new_level(lvl):
+	player.reset(100, screen_height - 130)
+	lava_group.empty()
+	portal_group.empty()
+
+	world = World(lvl)
+	return world
+
 
 class Player():
 	def __init__(self, x, y):
@@ -33,7 +47,7 @@ class Player():
 			#оригинал
 			hero_l = pygame.image.load(f'img/slime{i}.png')
 			#изменение размеров
-			hero_l = pygame.transform.scale(hero_l, (100, 77))
+			hero_l = pygame.transform.scale(hero_l, (90, 67))
 			#отражаю 
 			hero_r = pygame.transform.flip(hero_l, True, False)
 			self.hero_r.append(hero_r)
@@ -52,6 +66,9 @@ class Player():
 		self.heig = self.image.get_height()
 		self.jumped = False
 		self.direction = 0
+
+		self.level = 1
+		self.levelChange = 0
 
 	def update(self, dead):
 		dx = 0
@@ -132,7 +149,9 @@ class Player():
 				dead = 1
 			if pygame.sprite.spritecollide(self, spike_group, False):
 				dead = 1
-
+			if pygame.sprite.spritecollide(self, portal_group, False):
+				self.level += 1
+				self.levelChange = 1
 
 			#изменение координат персонажа
 			self.rect.x += dx
@@ -161,7 +180,7 @@ class Player():
 			#оригинал
 			hero_l = pygame.image.load(f'img/slime{i}.png')
 			#изменение размеров
-			hero_l = pygame.transform.scale(hero_l, (100, 77))
+			hero_l = pygame.transform.scale(hero_l, (90, 67))
 			#отражаю 
 			hero_r = pygame.transform.flip(hero_l, True, False)
 			self.hero_r.append(hero_r)
@@ -180,6 +199,13 @@ class Player():
 		self.jumped = False
 		self.direction = 0
 
+		self.levelChange = 0
+
+	def lvlUpdate(self):
+		return self.level
+	
+	def lvlChange(self):
+		return self.levelChange
 
 
 
@@ -303,19 +329,32 @@ class Button():
 
 		return ret
 
-world_data1 = [
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 9, 1], 
-[1, 0, 0, 0, 2, 2, 2, 2, 2, 1], 
-[1, 0, 0, 2, 0, 0, 0, 0, 0, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-[1, 5, 2, 2, 2, 5, 2, 0, 0, 1],  
-[1, 0, 0, 0, 0, 0, 0, 0, 2, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
-[1, 2, 2, 2, 4, 4, 4, 2, 4, 1], 
-[1, 3, 1, 1, 1, 3, 1, 1, 1, 1]
+lvl1 = [
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 9, 1, 1, 1], 
+[1, 0, 0, 0, 2, 2, 2, 2, 2, 1, 1, 1], 
+[1, 0, 0, 2, 0, 0, 0, 0, 0, 1, 1, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+[1, 5, 2, 2, 2, 5, 2, 0, 0, 1, 1, 1],  
+[1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], 
+[1, 2, 2, 2, 4, 4, 4, 2, 4, 1, 1, 1], 
+[1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1]
 ]
 
+
+lvl2 = [
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1]
+]
 
 
 player = Player(100, screen_height - 130)
@@ -324,9 +363,12 @@ lava_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 
-world = World(world_data1)
+world = World(lvl1)
 
 restart_button = Button(300, 300, restart_img)
+
+levelLoad(2)
+print(level_group)
 
 run = True
 while run:
@@ -345,12 +387,18 @@ while run:
 
 	if dead == 1:
 		if restart_button.draw():
-				player.reset(100, screen_height - 130)
-				dead = 0
+			player.reset(100, screen_height - 130)
+			dead = 0
 	else:
 		spike_group.draw(screen)
 		lava_group.draw(screen)
 		portal_group.draw(screen)
+	
+	if player.lvlChange() == 1:
+		print(player.lvlUpdate()-1)
+		world_data = []
+		world = new_level(level_group[player.lvlUpdate()-1])
+		dead = 0
 	pygame.display.update()
 
 pygame.quit()
