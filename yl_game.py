@@ -24,6 +24,9 @@ restart_img = pygame.image.load('img/start.png')
 
 level_group = []
 
+def delete(group):
+	group.empty()
+
 def levelLoad(maxLevel):
 	for i in range(1,maxLevel+1):
 		level_group.append(eval('lvl' + str(i)))
@@ -66,6 +69,7 @@ class Player():
 		self.heig = self.image.get_height()
 		self.jumped = False
 		self.direction = 0
+		self.score = 0
 
 		self.level = 1
 		self.levelChange = 0
@@ -149,9 +153,14 @@ class Player():
 				dead = 1
 			if pygame.sprite.spritecollide(self, spike_group, False):
 				dead = 1
+			if pygame.sprite.spritecollide(self, score_group, True):
+				self.score += 1
 			if pygame.sprite.spritecollide(self, portal_group, False):
-				self.level += 1
-				self.levelChange = 1
+				for i in portal_group:
+					if i.PortalMode() == 1:
+						self.level += 1
+						self.levelChange = 1
+					
 
 			#изменение координат персонажа
 			self.rect.x += dx
@@ -198,6 +207,7 @@ class Player():
 		self.heig = self.image.get_height()
 		self.jumped = False
 		self.direction = 0
+		self.score = 0
 
 		self.levelChange = 0
 
@@ -206,6 +216,9 @@ class Player():
 	
 	def lvlChange(self):
 		return self.levelChange
+	
+	def ScoreUpdate(self):
+		return self.score
 
 
 
@@ -214,21 +227,23 @@ class World():
 		self.tile_list = []
 
 		#загрузка текстур
-		dirt_img = pygame.image.load('img/dirt.png')
-		dirt_fish_img = pygame.image.load('img/dirt_fish.png')
-		grass_img = pygame.image.load('img/road.png')
-		lava_img = pygame.image.load('img/lava.png')
+		self.dirt_img = pygame.image.load('img/dirt.png')
+		self.dirt_fish_img = pygame.image.load('img/dirt_fish.png')
+		self.grass_img = pygame.image.load('img/road.png')
+		self.lava_img = pygame.image.load('img/lava.png')
+
+		self.data = data
 
 		#чтобы не рисовать в ручную каждую "ячейку" использу матрицу с информацией о уровне
 		#позволит добавить множество разных текстур и быстро создавать уровни в игре
 		row = 0
-		for i in data:
+		for i in self.data:
 			col = 0
 			for j in i:
 				# 1 - блок грязи
 				if j == 1:
 					#изменяю размер под заданый размер
-					img = pygame.transform.scale(dirt_img, (size_cell, size_cell))
+					img = pygame.transform.scale(self.dirt_img, (size_cell, size_cell))
 					#создаю rect обьект
 					img_rect = img.get_rect()
 					#изменяю его координаты по его положению в матрице
@@ -238,7 +253,7 @@ class World():
 					self.tile_list.append(j)
 				# 2 - блок дорожки	
 				if j == 2:
-					img = pygame.transform.scale(grass_img, (size_cell, size_cell))
+					img = pygame.transform.scale(self.grass_img, (size_cell, size_cell))
 					img_rect = img.get_rect()
 					img_rect.x = col * size_cell
 					img_rect.y = row * size_cell
@@ -246,7 +261,7 @@ class World():
 					self.tile_list.append(j)
 				# 3 - блок земли с рыбой		
 				if j == 3:
-					img = pygame.transform.scale(dirt_fish_img, (size_cell, size_cell))
+					img = pygame.transform.scale(self.dirt_fish_img, (size_cell, size_cell))
 					img_rect = img.get_rect()
 					img_rect.x = col * size_cell
 					img_rect.y = row * size_cell
@@ -267,9 +282,24 @@ class World():
 				col += 1
 			row += 1
 
+
+	def reset(self):
+		row = 0
+		for i in self.data:
+			col = 0
+			for j in i:
+				#6 - мана
+				if j == 7:
+					mana = ManaBlock(col * size_cell, row * size_cell )
+					score_group.add(mana)
+				col += 1
+			row += 1
+
+
 	def draw(self):
 		for tile in self.tile_list:
 			screen.blit(tile[0], tile[1])
+	
 
 class LavaBlock(pygame.sprite.Sprite):
 	def __init__(self, x, y):
@@ -291,12 +321,42 @@ class SpikeBlock(pygame.sprite.Sprite):
 
 class PortalBlock(pygame.sprite.Sprite):
 	def __init__(self, x, y):
+		self.mode = 0
+		self.x = x
+		self.y = y
+		self.mode = 0
+		pygame.sprite.Sprite.__init__(self)
+		img = pygame.image.load('img/portal_dis.png')
+		self.image = pygame.transform.scale(img, (size_cell, size_cell+40))
+		self.rect = self.image.get_rect()
+		self.rect.x = self.x
+		self.rect.y = self.y-40
+	
+	def PortalReset(self):
+		self.mode = 1
+		portal_group.empty()
 		pygame.sprite.Sprite.__init__(self)
 		img = pygame.image.load('img/portal_active.png')
 		self.image = pygame.transform.scale(img, (size_cell, size_cell+40))
 		self.rect = self.image.get_rect()
-		self.rect.x = x
-		self.rect.y = y-40
+		self.rect.x = self.x
+		self.rect.y = self.y-40
+		portal_group.add(self)
+	
+	def PortalMode(self):
+		return self.mode
+
+
+class ManaBlock(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		pygame.sprite.Sprite.__init__(self)
+		img = pygame.image.load('img/mana.png')
+		self.image = pygame.transform.scale(img, (size_cell//5, size_cell//2))
+		self.rect = self.image.get_rect()
+		self.rect.x = x+25
+		self.rect.y = y+25
+
+
 
 class Button():
 	def __init__(self, x, y, image):
@@ -333,11 +393,11 @@ lvl1 = [
 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
 [1, 0, 0, 0, 0, 0, 0, 0, 9, 1, 1, 1], 
 [1, 0, 0, 0, 2, 2, 2, 2, 2, 1, 1, 1], 
-[1, 0, 0, 2, 0, 0, 0, 0, 0, 1, 1, 1], 
+[1, 7, 0, 2, 7, 0, 0, 0, 0, 1, 1, 1], 
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
 [1, 5, 2, 2, 2, 5, 2, 0, 0, 1, 1, 1],  
 [1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], 
+[1, 0, 0, 0, 0, 7, 0, 0, 0, 1, 1, 1], 
 [1, 2, 2, 2, 4, 4, 4, 2, 4, 1, 1, 1], 
 [1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1]
 ]
@@ -362,13 +422,14 @@ player = Player(100, screen_height - 130)
 lava_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
+score_group = pygame.sprite.Group()
 
 world = World(lvl1)
-
+world.reset()
 restart_button = Button(300, 300, restart_img)
 
+
 levelLoad(2)
-print(level_group)
 
 run = True
 while run:
@@ -379,23 +440,41 @@ while run:
 
 	world.draw()
 
+
+	score_group.draw(screen)
+	portal_group.draw(screen)
+
 	dead = player.update(dead)
+	score_ = player.ScoreUpdate()
+	
+	if score_ == 3:
+		for item in portal_group:
+			item.PortalReset()
+
+	font = pygame.font.SysFont('Bauhaus 93', 30)
+	img = font.render('Мана: ' + str(score_), True, (255, 255, 255))
+
+	screen.blit(img, (20, 20))
+	
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			run = False
 
+
 	if dead == 1:
 		if restart_button.draw():
 			player.reset(100, screen_height - 130)
 			dead = 0
+
+			world.reset()
 	else:
 		spike_group.draw(screen)
 		lava_group.draw(screen)
 		portal_group.draw(screen)
+		score_group.draw(screen)
 	
 	if player.lvlChange() == 1:
-		print(player.lvlUpdate()-1)
 		world_data = []
 		world = new_level(level_group[player.lvlUpdate()-1])
 		dead = 0
