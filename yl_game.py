@@ -1,5 +1,8 @@
 import pygame
 from pygame.locals import *
+from pygame.locals import *
+flags = FULLSCREEN | DOUBLEBUF
+
 
 pygame.init()
 
@@ -7,20 +10,23 @@ clock = pygame.time.Clock()
 fps = 60
 
 #размер окна
-screen_width = 1200
-screen_height = 1000
+infoObject = pygame.display.Info()
+screen_width = infoObject.current_w
+screen_height = infoObject.current_h
 
 #размер квадрата
-size_cell = 100
-dead = 0
+size_cell = screen_height // 8
 
-screen = pygame.display.set_mode((screen_width, screen_height))
+dead = 0
+menu = 1
+screen = pygame.display.set_mode((screen_width, screen_height), flags)
 pygame.display.set_caption('Platformer')
 
 #загрузка заднего фона
 bg_img = pygame.image.load('img/background.jpg')
 
 restart_img = pygame.image.load('img/start.png')
+start_img = pygame.image.load('img/start.png')
 
 level_group = []
 
@@ -40,7 +46,7 @@ def new_level(lvl):
 	return world
 
 
-class Player():
+class Player(pygame.sprite.Sprite):
 	def __init__(self, x, y):
 		#списки с разными положениями персонажа во время анимации
 		self.hero_r = []
@@ -82,7 +88,7 @@ class Player():
 			key = pygame.key.get_pressed()
 			if key[pygame.K_SPACE] and self.jumped == False and self.jump_num < 2:
 				
-				self.vel_y = -15
+				self.vel_y = -17
 				self.jumped = True
 				self.jump_num += 1
 			if key[pygame.K_SPACE] == False:
@@ -356,7 +362,34 @@ class ManaBlock(pygame.sprite.Sprite):
 		self.rect.x = x+25
 		self.rect.y = y+25
 
+class Button():
+	def __init__(self, x, y, image):
+		self.image = image
+		self.rect = self.image.get_rect()
+		self.rect.x = x
+		self.rect.y = y
+		self.clicked = False
 
+	def draw(self):
+		action = False
+
+		#get mouse position
+		pos = pygame.mouse.get_pos()
+
+		#check mouseover and clicked conditions
+		if self.rect.collidepoint(pos):
+			if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+				action = True
+				self.clicked = True
+
+		if pygame.mouse.get_pressed()[0] == 0:
+			self.clicked = False
+
+
+		#draw button
+		screen.blit(self.image, self.rect)
+
+		return action
 
 class Button():
 	def __init__(self, x, y, image):
@@ -386,19 +419,16 @@ class Button():
 		screen.blit(bg_img, (0, 0))
 		screen.blit(self.image, self.rect)
 		
-
 		return ret
 
 lvl1 = [
 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 9, 1, 1, 1], 
-[1, 0, 0, 0, 2, 2, 2, 2, 2, 1, 1, 1], 
-[1, 7, 0, 2, 7, 0, 0, 0, 0, 1, 1, 1], 
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
-[1, 5, 2, 2, 2, 5, 2, 0, 0, 1, 1, 1],  
-[1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1], 
-[1, 0, 0, 0, 0, 7, 0, 0, 0, 1, 1, 1], 
-[1, 2, 2, 2, 4, 4, 4, 2, 4, 1, 1, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],   
 [1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1]
 ]
 
@@ -417,7 +447,7 @@ lvl2 = [
 ]
 
 
-player = Player(100, screen_height - 130)
+player = Player(size_cell, screen_height - 130)
 
 lava_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
@@ -426,58 +456,65 @@ score_group = pygame.sprite.Group()
 
 world = World(lvl1)
 world.reset()
+
 restart_button = Button(300, 300, restart_img)
+start_button = Button(300, 300, start_img)
 
 
 levelLoad(2)
 
 run = True
 while run:
+	pygame.event.get()
 
 	clock.tick(fps)
 
 	screen.blit(bg_img, (0, 0))
 
-	world.draw()
-
-
-	score_group.draw(screen)
-	portal_group.draw(screen)
-
-	dead = player.update(dead)
-	score_ = player.ScoreUpdate()
-	
-	if score_ == 3:
-		for item in portal_group:
-			item.PortalReset()
-
-	font = pygame.font.SysFont('Bauhaus 93', 30)
-	img = font.render('Мана: ' + str(score_), True, (255, 255, 255))
-
-	screen.blit(img, (20, 20))
-	
-
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			run = False
-
-
-	if dead == 1:
-		if restart_button.draw():
-			player.reset(100, screen_height - 130)
-			dead = 0
-
-			world.reset()
+	if menu == 1:
+		if start_button.draw():
+			menu = 0
 	else:
-		spike_group.draw(screen)
-		lava_group.draw(screen)
-		portal_group.draw(screen)
+		world.draw()
+
+		
 		score_group.draw(screen)
-	
-	if player.lvlChange() == 1:
-		world_data = []
-		world = new_level(level_group[player.lvlUpdate()-1])
-		dead = 0
+		portal_group.draw(screen)
+
+		dead = player.update(dead)
+		score_ = player.ScoreUpdate()
+		
+		if score_ == 3:
+			for item in portal_group:
+				item.PortalReset()
+
+		font = pygame.font.SysFont('Bauhaus 93', 30)
+		img = font.render('Мана: ' + str(score_), True, (255, 255, 255))
+
+		screen.blit(img, (20, 20))
+		
+
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				run = False
+
+
+		if dead == 1:
+			if restart_button.draw():
+				player.reset(size_cell, screen_height - 130)
+				dead = 0
+
+				world.reset()
+		else:
+			spike_group.draw(screen)
+			lava_group.draw(screen)
+			portal_group.draw(screen)
+			score_group.draw(screen)
+		
+		if player.lvlChange() == 1:
+			world_data = []
+			world = new_level(level_group[player.lvlUpdate()-1])
+			dead = 0
 	pygame.display.update()
 
 pygame.quit()
