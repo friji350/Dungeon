@@ -2,6 +2,26 @@ import pygame
 from pygame.locals import *
 from pygame.locals import *
 
+
+
+def loadCfg(file):
+    with open(file, "r") as cfg_file:
+        cfg = cfg_file.readline()
+
+    if len(cfg) == 0:
+        level = 1
+        info_dead = 0
+        cfg_file = open(file, 'w')
+        cfg_file.write(str(level) + ';' + str(info_dead))
+        cfg_file.close()
+    else:
+        cfg = cfg.split(';')
+        level = cfg[0]
+        info_dead = cfg[1]
+
+    return level, info_dead
+
+level, info_dead = loadCfg('cfg.txt')
 flags = FULLSCREEN | DOUBLEBUF
 
 pygame.init()
@@ -16,6 +36,11 @@ screen_height = infoObject.current_h
 
 # размер квадрата
 size_cell = screen_height // 8
+
+
+
+
+
 
 dead = 0
 menu = 1
@@ -50,6 +75,7 @@ gameOver_sfx = pygame.mixer.Sound('music/death.wav')
 gameOver_sfx.set_volume(0.5)
 
 
+
 def roundup(x):
     return x if x % 10 == 0 else x + 10 - x % 10
 
@@ -79,7 +105,7 @@ def ResetPortal():
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, level, dead_num):
         # списки с разными положениями персонажа во время анимации
         self.hero_r = []
         self.hero_l = []
@@ -109,8 +135,9 @@ class Player(pygame.sprite.Sprite):
         self.jumped = False
         self.direction = 0
         self.score = 0
+        self.dead_num = dead_num
 
-        self.level = 1
+        self.level = level
         self.levelChange = 0
 
     def update(self, dead):
@@ -121,7 +148,7 @@ class Player(pygame.sprite.Sprite):
             key = pygame.key.get_pressed()
             if key[pygame.K_SPACE] and self.jumped == False and self.jump_num < 2:
                 jump_sfx.play()
-                self.vel_y = -17
+                self.vel_y = -18
                 self.jumped = True
                 self.jump_num += 1
             if key[pygame.K_SPACE] == False:
@@ -190,8 +217,17 @@ class Player(pygame.sprite.Sprite):
             if pygame.sprite.spritecollide(self, lava_group, False):
                 gameOver_sfx.play()
                 dead = 1
+                self.dead_num += 1
+                cfg_file = open('cfg.txt', 'w')
+                cfg_file.write(str(player.lvlUpdate()) + ';' + str(self.dead_num))
+                cfg_file.close()
+                
             if pygame.sprite.spritecollide(self, spike_group, False):
                 dead = 1
+                self.dead_num += 1
+                cfg_file = open('cfg.txt', 'w')
+                cfg_file.write(str(player.lvlUpdate()) + ';' + str(self.dead_num))
+                cfg_file.close()
                 gameOver_sfx.play()
             if pygame.sprite.spritecollide(self, score_group, True):
                 self.score += 1
@@ -255,6 +291,9 @@ class Player(pygame.sprite.Sprite):
 
     def ScoreUpdate(self):
         return self.score
+    
+    def deadInfo(self):
+        return self.dead_num
 
 
 class World():
@@ -586,15 +625,14 @@ lvl2 = [
     [0, 2, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0]
 ]
 
-player = Player(size_cell, screen_height - 130)
+player = Player(size_cell, screen_height - 130, int(level), int(info_dead))
 
 lava_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 score_group = pygame.sprite.Group()
 
-world = World(lvl1)
-world.reset()
+
 
 restart_button = Button(size_cell * 2, size_cell * 3, restart_img)
 start_button = Button(size_cell * 4, size_cell * 3, start_img)
@@ -604,6 +642,9 @@ win_button = Button(screen_width // 2 - 140, size_cell * 6, exit_img, False)
 stop_button = Button(screen_width - 150, screen_height - 150, stop_img, False)
 
 levelLoad(2)
+
+world = World(level_group[player.lvlUpdate() - 1])
+world.reset()
 
 run = True
 while run:
@@ -664,6 +705,11 @@ while run:
 
         if player.lvlChange() == 1:
             if player.lvlUpdate() <= len(level_group):
+
+                cfg_file = open('cfg.txt', 'w')
+                cfg_file.write(str(player.lvlUpdate()) + ';' + str(player.deadInfo()))
+                cfg_file.close()
+
                 world_data = []
                 world = new_level(level_group[player.lvlUpdate() - 1])
                 dead = 0
