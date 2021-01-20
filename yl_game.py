@@ -86,7 +86,9 @@ def delete(group):
 
 def levelLoad(maxLevel):
     for i in range(1, maxLevel + 1):
-        level_group.append(eval('lvl' + str(i)))
+        with open(f'level/lvl{i}.txt') as f:
+            lvl = [list(map(int, row.split())) for row in f.readlines()]
+        level_group.append(lvl)
 
 
 def new_level(lvl):
@@ -94,6 +96,7 @@ def new_level(lvl):
     lava_group.empty()
     portal_group.empty()
     spike_group.empty()
+
 
     world = World(lvl)
     return world
@@ -603,27 +606,7 @@ class Button():
         return ret
 
 
-lvl1 = [
-    [8, 0, 0, 0, 0, 12, 0, 12, 0, 0, 0, 11],
-    [8, 0, 0, 0, 0, 7, 0, 7, 0, 0, 0, 11],
-    [8, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11],
-    [0, 13, 13, 13, 13, 5, 13, 5, 14, 0, 0, 11],
-    [8, 0, 0, 0, 0, 7, 0, 0, 0, 0, 15, 0],
-    [8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11],
-    [8, 0, 0, 0, 6, 2, 2, 4, 4, 2, 4, 11],
-    [0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0]
-]
 
-lvl2 = [
-    [8, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 11],
-    [8, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 11],
-    [8, 0, 0, 0, 6, 66, 0, 0, 11, 0, 0, 0, 0, 11],
-    [8, 7, 0, 15, 0, 8, 0, 0, 12, 0, 0, 0, 0, 11],
-    [0, 14, 0, 0, 11, 8, 7, 0, 0, 0, 7, 0, 0, 11],
-    [8, 0, 0, 6, 0, 8, 0, 0, 0, 0, 0, 0, 9, 11],
-    [8, 0, 6, 0, 0, 8, 0, 0, 6, 2, 5, 2, 2, 11],
-    [0, 2, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0]
-]
 
 player = Player(size_cell, screen_height - 130, int(level), int(info_dead))
 
