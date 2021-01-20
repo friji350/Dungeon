@@ -224,6 +224,14 @@ class Player(pygame.sprite.Sprite):
                 cfg_file = open('cfg.txt', 'w')
                 cfg_file.write(str(player.lvlUpdate()) + ';' + str(self.dead_num))
                 cfg_file.close()
+
+            if pygame.sprite.spritecollide(self, enemy_group, False):
+                gameOver_sfx.play()
+                dead = 1
+                self.dead_num += 1
+                cfg_file = open('cfg.txt', 'w')
+                cfg_file.write(str(player.lvlUpdate()) + ';' + str(self.dead_num))
+                cfg_file.close()
                 
             if pygame.sprite.spritecollide(self, spike_group, False):
                 dead = 1
@@ -423,6 +431,8 @@ class World():
                 if j == 99:
                     portal = PortalBlock(col * size_cell, row * size_cell, True)
                     portal_group.add(portal)
+                
+
                 col += 1
             row += 1
 
@@ -435,6 +445,10 @@ class World():
                 if j == 7:
                     mana = ManaBlock(col * size_cell, row * size_cell)
                     score_group.add(mana)
+                # 22 - враг
+                if j == 22:
+                    enemy = Enemy(col * size_cell, row * size_cell)
+                    enemy_group.add(enemy)
                 col += 1
             row += 1
 
@@ -573,6 +587,24 @@ class ManaBlock(pygame.sprite.Sprite):
             self.con = 0
         self.con += 1
 
+class Enemy(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		pygame.sprite.Sprite.__init__(self)
+		img = pygame.image.load('img/enemy.png')
+		self.image = pygame.transform.scale(img, (int(size_cell*0.8), int(size_cell*0.8)))
+		self.rect = self.image.get_rect()
+		self.rect.x = x - int(size_cell*0.2)
+		self.rect.y = y + int(size_cell*0.2)
+		self.move_dir = 1
+		self.move_coun = 0
+
+	def update(self):
+		self.rect.x += self.move_dir
+		self.move_coun += 1
+		if abs(self.move_coun) > 50:
+			self.move_dir *= -1
+			self.move_coun *= -1
+
 
 class Button():
     def __init__(self, x, y, image, bg=True):
@@ -614,7 +646,7 @@ lava_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 score_group = pygame.sprite.Group()
-
+enemy_group = pygame.sprite.Group()
 
 
 restart_button = Button(size_cell * 2, size_cell * 3, restart_img)
@@ -649,6 +681,8 @@ while run:
             run = False
         score_group.draw(screen)
         portal_group.draw(screen)
+        enemy_group.update()
+        enemy_group.draw(screen)
 
         dead = player.update(dead)
         score_ = player.ScoreUpdate()
@@ -672,7 +706,8 @@ while run:
                 player.reset(size_cell, size_cell * 9)
                 dead = 0
                 ResetPortal()
-
+                delete(enemy_group)
+                delete(score_group)
                 world.reset()
             if exit_button.draw():
                 run = False
@@ -685,6 +720,7 @@ while run:
             lava_group.draw(screen)
             portal_group.draw(screen)
             score_group.draw(screen)
+            enemy_group.draw(screen)
 
         if player.lvlChange() == 1:
             if player.lvlUpdate() <= len(level_group):
@@ -696,6 +732,8 @@ while run:
                 world_data = []
                 world = new_level(level_group[player.lvlUpdate() - 1])
                 dead = 0
+                delete(enemy_group)
+                delete(score_group)
                 world.reset()
                 newLevel_sfx.play()
             else:
