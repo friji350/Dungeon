@@ -54,6 +54,7 @@ restart_img = pygame.image.load('img/restart.png')
 start_img = pygame.image.load('img/start.png')
 exit_img = pygame.image.load('img/exit.png')
 stop_img = pygame.image.load('img/stopt.png')
+newGame_img = pygame.image.load('img/newGame.png')
 
 level_group = []
 
@@ -232,6 +233,10 @@ class Player(pygame.sprite.Sprite):
                 cfg_file = open('cfg.txt', 'w')
                 cfg_file.write(str(player.lvlUpdate()) + ';' + str(self.dead_num))
                 cfg_file.close()
+            
+            if pygame.sprite.spritecollide(self, dog_group, False):
+                self.level += 1
+                self.levelChange = 1
                 
             if pygame.sprite.spritecollide(self, spike_group, False):
                 dead = 1
@@ -322,6 +327,8 @@ class World():
         self.fly_img = pygame.image.load('img/fly.png')
         self.flyLeft_img = pygame.image.load('img/fly_leftl.png')
         self.flyRight_img = pygame.image.load('img/fly_right.png')
+        self.flyAll_img = pygame.image.load('img/fly_all.png')
+        self.dog_img = pygame.image.load('img/dog.png')
 
         self.data = data
 
@@ -423,6 +430,18 @@ class World():
                     img_rect.y = row * size_cell
                     j = (img, img_rect)
                     self.tile_list.append(j)
+                # 16 - летающая платформа(левая)
+                if j == 16:
+                    img = pygame.transform.scale(self.flyAll_img, (size_cell, size_cell))
+                    img_rect = img.get_rect()
+                    img_rect.x = col * size_cell
+                    img_rect.y = row * size_cell
+                    j = (img, img_rect)
+                    self.tile_list.append(j)
+                # 44 - собака
+                if j == 44:
+                    dog = DogBlock(col * size_cell, row * size_cell)
+                    dog_group.add(dog)
                 # 9 - портал(лево)
                 if j == 9:
                     portal = PortalBlock(col * size_cell, row * size_cell)
@@ -511,6 +530,14 @@ class SpikeBlock(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y - 52
 
+class DogBlock(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        img = pygame.image.load('img/dog.png')
+        self.image = pygame.transform.scale(img, (size_cell, size_cell + 50))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
 
 class PortalBlock(pygame.sprite.Sprite):
     def __init__(self, x, y, flip=False):
@@ -647,16 +674,18 @@ spike_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 score_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
+dog_group = pygame.sprite.Group()
 
 
 restart_button = Button(size_cell * 2, size_cell * 3, restart_img)
 start_button = Button(size_cell * 4, size_cell * 3, start_img)
 exit_button = Button(size_cell * 8, size_cell * 3, exit_img, False)
-win_button = Button(screen_width // 2 - 140, size_cell * 6, exit_img, False)
+win_button = Button(screen_width // 2 - 140, size_cell * 7, exit_img, False)
+new_button = Button(screen_width // 2 - 140, size_cell * 6, newGame_img, False)
 
 stop_button = Button(screen_width - 150, screen_height - 150, stop_img, False)
-
-levelLoad(2)
+ 
+levelLoad(8)
 
 world = World(level_group[player.lvlUpdate() - 1])
 world.reset()
@@ -713,6 +742,7 @@ while run:
                 run = False
         else:
             spike_group.draw(screen)
+            dog_group.draw(screen)
             for i in lava_group:
                 i.animation()
             for i in score_group:
@@ -739,10 +769,30 @@ while run:
             else:
                 screen.blit(bg_img, (0, 0))
                 font = pygame.font.SysFont('Bauhaus 93', 60)
-                img = font.render('Ты выйграл!!', True, (255, 255, 255))
+                img = font.render('YOU WIN!!', True, (255, 255, 255))
+                with open('cfg.txt', "r") as cfg_file:
+                    cfg = cfg_file.readline()
+                    cfg = cfg.split(';')
+
+                img2 = font.render(f'Вы погибли: {cfg[1]} раз за всю игру', True, (255, 255, 255))
                 screen.blit(img, ((screen_width // 2) - 140, screen_height // 2))
+                screen.blit(img2, ((screen_width // 2) - 140, screen_height // 2 + 125))
                 if win_button.draw():
                     run = False
+                if new_button.draw():
+                    with open('cfg.txt', "w") as cfg_file:
+                        cfg_file.write(str(1) + ';' + str(0))
+                        cfg_file.close()
+                        delete(dog_group)
+
+                        world_data = []
+                        world = new_level(level_group[0])
+                        dead = 0
+                        delete(enemy_group)
+                        delete(score_group)
+                        world.reset()
+                        newLevel_sfx.play()
+                    
 
     pygame.display.update()
 
